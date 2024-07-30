@@ -96,41 +96,45 @@
     <!-- Update User Credit -->
     <label for="admin-email">User Email:</label>
     <select id="admin-email" style="width: 100%;"></select>
-    <label>.</label>
-    <label>.</label>
-    <label>.</label>
+<p>.</p>
+<p>.</p>
+<p>.</p>
+<p>.</p>
     <label for="admin-credit">Credit Amount:</label>
     <input type="number" id="admin-credit" min="1" max="10000" value="0">
     <button onclick="updateUserCredit()">Update Credit</button>
     
-    <!-- Bets Table -->
-    <h2>All Bets</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Bet ID</th>
-                <th>Time</th>
-                <th>Event</th>
-                <th>Option Selected</th>
-                <th>Odds</th>
-                <th>Stake</th>
-                <th>Winning</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="bet-table-body">
-            <!-- Bets will be populated here -->
-        </tbody>
-    </table>
+    <!-- Bets Display -->
+    <div class="user-bets">
+        <h2>All Bets</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Bet ID</th>
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>Option Selected</th>
+                    <th>Odds</th>
+                    <th>Stake</th>
+                    <th>Winning</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="bets-list">
+                <!-- Bets will be populated here -->
+            </tbody>
+        </table>
+    </div>
     
     <!-- Update Bet Status -->
     <div style="margin-top: 40px;">
         <h2>Update Bet Status</h2>
         <label for="bet-id">Bet ID:</label>
         <select id="bet-id" style="width: 100%;"></select>
-    <label>.</label>
-    <label>.</label>
-    <label>.</label>
+<p>.</p>
+<p>.</p>
+<p>.</p>
+<p>.</p>
         <label for="bet-status">Bet Status:</label>
         <select id="bet-status">
             <option value="running">Running</option>
@@ -151,93 +155,123 @@
         authDomain: "bet2-e5ab2.firebaseapp.com",
         projectId: "bet2-e5ab2",
         storageBucket: "bet2-e5ab2.appspot.com",
-        messagingSenderId: "467788495913",
-        appId: "1:467788495913:web:38d4e8d4278d030bc7b038"
+        messagingSenderId: "510237803181",
+        appId: "1:510237803181:web:3b4d7c8a8dd8f708cb6d3c",
+        measurementId: "G-EY74EMZX1M"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // Fetch users and populate dropdown
+    // Function to display alerts
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alert-container');
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-' + (type === 'error' ? 'error' : 'success');
+        alertDiv.innerText = message;
+        alertContainer.appendChild(alertDiv);
+        setTimeout(() => {
+            alertContainer.removeChild(alertDiv);
+        }, 5000);
+    }
+
+    // Fetch and populate user dropdown
     function populateUserDropdown() {
         db.collection("users").get().then(querySnapshot => {
             const $dropdown = $('#admin-email');
             $dropdown.empty();
             if (querySnapshot.empty) {
-                console.log('No users found.');
                 showAlert('No users found.', 'error');
             } else {
                 querySnapshot.forEach(doc => {
                     const user = doc.data();
                     $dropdown.append(`<option value="${user.email}">${user.email}</option>`);
                 });
+                $dropdown.select2({
+                    placeholder: 'Select a user',
+                    allowClear: true
+                });
             }
-            $dropdown.select2({
-                placeholder: 'Select a user',
-                allowClear: true
-            });
         }).catch(error => {
-            console.error('Error fetching users:', error);
             showAlert('Error fetching users: ' + error.message, 'error');
         });
     }
 
-    // Fetch all bets and populate the table and dropdown
-    function populateBets() {
-        db.collection("bets").get().then(querySnapshot => {
-            const $tableBody = $('#bet-table-body');
-            const $betDropdown = $('#bet-id');
-            $tableBody.empty();
-            $betDropdown.empty();
+    // Fetch and display bets for the logged-in user
+    function loadBets() {
+        const userEmail = auth.currentUser ? auth.currentUser.email : null;
+        if (!userEmail) {
+            showAlert('User is not logged in.', 'error');
+            return;
+        }
+
+        db.collection('bets').where('email', '==', userEmail).get()
+            .then(querySnapshot => {
+                const betsList = document.getElementById('bets-list');
+                betsList.innerHTML = '';
+                if (querySnapshot.empty) {
+                    showAlert('No bets found.', 'error');
+                } else {
+                    querySnapshot.forEach(doc => {
+                        const bet = doc.data();
+                        const betId = doc.id;
+                        const betTime = bet.timestamp ? new Date(bet.timestamp.seconds * 1000).toLocaleString() : '';
+                        const event = bet.event || '';
+                        const optionSelected = bet.bet || '';
+                        const odds = bet.odds || '';
+                        const stake = bet.stake || '';
+                        const winning = (stake * odds).toFixed(2) || '';
+                        const status = bet.status || '';
+
+                        const row = `
+                            <tr>
+                                <td>${betId}</td>
+                                <td>${betTime}</td>
+                                <td>${event}</td>
+                                <td>${optionSelected}</td>
+                                <td>${odds}</td>
+                                <td>${stake}</td>
+                                <td>${winning}</td>
+                                <td class="status-${status}">${status}</td>
+                            </tr>
+                        `;
+                        betsList.innerHTML += row;
+                    });
+                }
+            })
+            .catch(error => {
+                showAlert('Error fetching bets: ' + error.message, 'error');
+            });
+    }
+
+    // Populate bet ID dropdown for status updates
+    function populateBetDropdown() {
+        db.collection('bets').get().then(querySnapshot => {
+            const $dropdown = $('#bet-id');
+            $dropdown.empty();
             if (querySnapshot.empty) {
-                console.log('No bets found.');
-                showAlert('No bets found.', 'error');
+                showAlert('No bets found for dropdown.', 'error');
             } else {
                 querySnapshot.forEach(doc => {
-                    const bet = doc.data();
-                    const betId = doc.id;
-                    const betTime = bet.deviceTime ? new Date(bet.deviceTime).toLocaleString() : ''; // Format date
-                    const event = bet.bet || '';
-                    const optionSelected = bet.bet || '';
-                    const odds = bet.odds || '';
-                    const stake = bet.stake || '';
-                    const winning = (stake * odds).toFixed(2) || '';
-                    const status = bet.status || '';
-                    
-                    const row = `
-                        <tr>
-                            <td>${betId}</td>
-                            <td>${betTime}</td>
-                            <td>${event}</td>
-                            <td>${optionSelected}</td>
-                            <td>${odds}</td>
-                            <td>${stake}</td>
-                            <td>${winning}</td>
-                            <td>${status}</td>
-                        </tr>
-                    `;
-                    $tableBody.append(row);
-                    $betDropdown.append(`<option value="${betId}">${betId}</option>`);
+                    $dropdown.append(`<option value="${doc.id}">${doc.id}</option>`);
+                });
+                $dropdown.select2({
+                    placeholder: 'Select a bet',
+                    allowClear: true
                 });
             }
-            $betDropdown.select2({
-                placeholder: 'Select a Bet ID',
-                allowClear: true
-            });
         }).catch(error => {
-            console.error('Error fetching bets:', error);
-            showAlert('Error fetching bets: ' + error.message, 'error');
+            showAlert('Error fetching bets for dropdown: ' + error.message, 'error');
         });
     }
 
-    // Update user credit function
+    // Update user credit
     function updateUserCredit() {
         const email = document.getElementById('admin-email').value;
         const credit = parseFloat(document.getElementById('admin-credit').value);
         if (email) {
             db.collection("users").where("email", "==", email).get().then(querySnapshot => {
                 if (querySnapshot.empty) {
-                    console.log('No user found with email:', email);
                     showAlert('No user found with email: ' + email, 'error');
                 } else {
                     querySnapshot.forEach(doc => {
@@ -246,13 +280,11 @@
                         }).then(() => {
                             showAlert('User credit updated successfully!', 'success');
                         }).catch(error => {
-                            console.error('Error updating credit:', error);
                             showAlert('Error updating credit: ' + error.message, 'error');
                         });
                     });
                 }
             }).catch(error => {
-                console.error('Error querying user:', error);
                 showAlert('Error querying user: ' + error.message, 'error');
             });
         } else {
@@ -260,37 +292,35 @@
         }
     }
 
-    // Update bet status function
+    // Update bet status
     function updateBetStatus() {
-        const betId = document.getElementById('bet-id').value.trim();
+        const betId = document.getElementById('bet-id').value;
         const status = document.getElementById('bet-status').value;
-
-        if (betId) {
+        if (betId && status) {
             db.collection("bets").doc(betId).update({
                 status: status
             }).then(() => {
                 showAlert('Bet status updated successfully!', 'success');
-                populateBets(); // Refresh the bet table to reflect the change
+                loadBets(); // Refresh the bets list
             }).catch(error => {
-                console.error('Error updating bet status:', error);
                 showAlert('Error updating bet status: ' + error.message, 'error');
             });
         } else {
-            showAlert('Please select a Bet ID.', 'error');
+            showAlert('Please select a bet ID and status.', 'error');
         }
     }
 
-    // Show alert function
-    function showAlert(message, type) {
-        const alertContainer = document.getElementById('alert-container');
-        const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-        alertContainer.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-    }
-
-    // Initialize dropdowns and table on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        populateUserDropdown();
-        populateBets();
+    // Initialize dropdowns and data on page load
+    $(document).ready(function() {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                populateUserDropdown();
+                loadBets();
+                populateBetDropdown();
+            } else {
+                showAlert('Please log in to view bets.', 'error');
+            }
+        });
     });
 </script>
 
