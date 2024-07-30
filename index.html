@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omega Betting Site</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .navbar {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .status-running {
+            background-color: yellow;
+            color: black;
+            font-weight: bold;
+        }
+        .status-lost {
+            background-color: red;
+            color: white;
+            font-weight: bold;
+        }
+        .status-won {
+            background-color: green;
+            color: white;
+            font-weight: bold;
+        }
+        h1 {
+            text-align: center;
+            color: blue;
+        }
+        h2, h3 {
+            text-align: center;
+        }
+        h2 {
+            color: white;
+        }
+        h3 {
+            color: tomato;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 8px;
+            color: green;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        button {
+            width: 30%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .event, .bet-slip, .user-bets {
+            margin: 20px 0;
+        }
+        .odds {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .odds div {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .buy-credit, .withdraw-credit, .credit-info {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .credit-info input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+        }
+        .auth-link {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .auth-link a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+        .bet-slip table, .user-bets table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .bet-slip th, .user-bets th, .bet-slip td, .user-bets td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .bet-slip th, .user-bets th {
+            background-color: #007BFF;
+            color: white;
+        }
+        .bet-slip table td, 
+        .user-bets table td,
+        .bet-slip table th, 
+        .user-bets table th {
+            font-size: 0.7em; /* Adjust the size as needed */
+        }
+        p2 {
+            color: green;
+            text-align: center;
+            font-size: 28px;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="#" onclick="showLogin()">Login</a>
+        <a href="#" onclick="showSignUp()">Sign Up</a>
+    </div>
+
+    <div class="container">
+        <h1>Omega Betting Site</h1>
+        <div id="auth">
+            <div id="signup">
+                <h2>Sign Up</h2>
+                <label for="signup-email">Email</label>
+                <input type="email" id="signup-email">
+                <label for="signup-password">Password</label>
+                <input type="password" id="signup-password">
+                <button onclick="signUp()">Sign Up</button>
+                <div class="auth-link">
+                    <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+                </div>
+            </div>
+            <div id="login" style="display:none;">
+                <h2>Login</h2>
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password">
+                <button onclick="login()">Login</button>
+                <div class="auth-link">
+                    <p>Don't have an account? <a href="#" onclick="showSignUp()">Sign Up</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="dashboard" style="display:none;">
+            <h2>Dashboard</h2>
+            <p>Welcome, <span id="user-email"></span>!</p>
+            <button class="logout-button" onclick="logout()">Logout</button>
+
+            <div class="buy-credit">
+                <p>Available Credit Balance:</p>
+                <input type="text" id="purchased-credit" placeholder="Purchased Credit Amount" readonly>
+                <button onclick="requestCreditUpdate('buy')">Buy Credit</button>
+                <button onclick="requestCreditUpdate('withdraw')">Withdraw Credit</button>
+            </div>
+
+            <div class="event">
+                <h3>Event: Riders FC vs Golden Star</h3>
+                <div class="odds">
+                    <div onclick="selectBet('Home', 1.5)">Home Win (1.5)</div>
+                    <div onclick="selectBet('Draw', 1.5)">Draw (1.5)</div>
+                    <div onclick="selectBet('Away', 1.5)">Away Win (1.5)</div>
+                </div>
+                <div class="odds">
+                    <div onclick="selectBet('Over 2.5', 1.5)">Over 2.5 (1.5)</div>
+                    <div onclick="selectBet('Under 2.5', 1.5)">Under 2.5 (1.5)</div>
+                </div>
+                <div class="odds">
+                    <div onclick="selectBet('Goal Goal', 1.5)">Goal Goal (1.5)</div>
+                    <div onclick="selectBet('No Goal Goal', 1.5)">No Goal Goal (1.5)</div>
+                </div>
+                <div class="odds">
+                    <div onclick="selectBet('First Half Home', 1.5)">First Half Home (1.5)</div>
+                    <div onclick="selectBet('First Half Draw', 1.5)">First Half Draw (1.5)</div>
+                    <div onclick="selectBet('First Half Away', 1.5)">First Half Away (1.5)</div>
+                </div>
+            </div>
+
+            <div class="bet-slip">
+                <h3>Bet Slip</h3>
+                <p>Selected Bet: <span id="selected-bet">None</span></p>
+                <label for="stake">Stake Amount</label>
+                <input type="number" id="stake" min="100" max="1000" value="0" oninput="updateWinnings()">
+                <p2 id="winnings">Potential Winnings: $0.00</p2>
+                <button onclick="placeBet()">Place Bet</button>
+                <p>Potential Winning currency is Naira (NG). Not Dollar ($)</p>
+                <table id="placed-bets">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Option Selected</th>
+                            <th>Odds</th>
+                            <th>Stake</th>
+                            <th>Winning</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bet-slip-body">
+                        <!-- Placed bets will be displayed here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <p>All winning out will be screenshot and shared with the same WhatsApp number used when purchasing credit, confirmed winning ticket before requesting for withdrawal. Thank you for your patronage, and good luck!</p>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYDLUyrsSv-ECp60qPmzZmvpgrRBg7SOI",
+            authDomain: "bet2-e5ab2.firebaseapp.com",
+            projectId: "bet2-e5ab2",
+            storageBucket: "bet2-e5ab2.appspot.com",
+            messagingSenderId: "510237803181",
+            appId: "1:510237803181:web:3b4d7c8a8dd8f708cb6d3c",
+            measurementId: "G-EY74EMZX1M"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Show the login form
+        function showLogin() {
+            document.getElementById('signup').style.display = 'none';
+            document.getElementById('login').style.display = 'block';
+        }
+
+        // Show the signup form
+        function showSignUp() {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('signup').style.display = 'block';
+        }
+
+        // Sign up function
+        function signUp() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    alert('Sign up successful!');
+                    showLogin();
+                })
+                .catch(error => {
+                    alert(error.message);
+                });
+        }
+
+        // Login function
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    alert('Login successful!');
+                    loadDashboard();
+                })
+                .catch(error => {
+                    alert(error.message);
+                });
+        }
+
+        // Logout function
+        function logout() {
+            auth.signOut().then(() => {
+                document.getElementById('auth').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                alert('Logged out successfully!');
+            }).catch(error => {
+                alert('Error logging out: ' + error.message);
+            });
+        }
+
+        let selectedBet = null;
+        let selectedOdds = 1.5; // Default odds
+
+        // Update winnings based on stake and odds
+        function updateWinnings() {
+            const stake = parseFloat(document.getElementById('stake').value);
+            const winnings = stake * selectedOdds;
+            document.getElementById('winnings').textContent = `Potential Winnings: $${winnings.toFixed(2)}`;
+        }
+
+        // Select bet and update odds
+        function selectBet(option, odds) {
+            selectedBet = option;
+            selectedOdds = odds;
+            document.getElementById('selected-bet').textContent = option;
+            updateWinnings(); // Update winnings when bet or odds change
+        }
+
+        // Place bet
+        function placeBet() {
+            if (!selectedBet) {
+                alert('Please select a bet.');
+                return;
+            }
+
+            const stake = parseFloat(document.getElementById('stake').value);
+
+            if (stake <= 0) {
+                alert('Please enter a valid stake amount.');
+                return;
+            }
+
+            // Get user credit
+            db.collection("users").doc(auth.currentUser.uid).get().then(doc => {
+                const userCredit = doc.data().credit;
+
+                if (stake > userCredit) {
+                    alert('Insufficient credit.');
+                    return;
+                }
+
+                // Deduct stake from user credit
+                db.collection("users").doc(auth.currentUser.uid).update({
+                    credit: firebase.firestore.FieldValue.increment(-stake)
+                });
+
+                // Add bet to Firestore
+                db.collection("bets").add({
+                    userId: auth.currentUser.uid,
+                    bet: selectedBet,
+                    stake: stake,
+                    odds: selectedOdds,
+                    status: 'running' // Initial status
+                }).then(docRef => {
+                    alert('Bet placed successfully!');
+                    document.getElementById('stake').value = 0;
+                    document.getElementById('winnings').textContent = 'Potential Winnings: $0.00';
+
+                    // Update bet slip table
+                    const placedBetsTable = document.getElementById('bet-slip-body');
+                    const newRow = placedBetsTable.insertRow();
+                    
+                    // Event column (you may want to customize this)
+                    const eventCell = newRow.insertCell(0);
+                    eventCell.textContent = 'Event: Riders FC vs Golden Star'; // Example event name
+
+                    // Option Selected column
+                    const optionCell = newRow.insertCell(1);
+                    optionCell.textContent = selectedBet;
+
+                    // Odds column
+                    const oddsCell = newRow.insertCell(2);
+                    oddsCell.textContent = selectedOdds;
+
+                    // Stake column
+                    const stakeCell = newRow.insertCell(3);
+                    stakeCell.textContent = stake;
+
+                    // Winning column
+                    const winningCell = newRow.insertCell(4);
+                    winningCell.textContent = (stake * selectedOdds).toFixed(2);
+
+                    // Status column (initially set to running)
+                    const statusCell = newRow.insertCell(5);
+                    statusCell.textContent = 'Running';
+                    statusCell.className = 'status-running'; // Set initial status color
+                    
+                    // Clear selected bet
+                    selectedBet = null;
+                    document.getElementById('selected-bet').textContent = 'None';
+                    
+                    // Reload dashboard to reflect updated credit and user bets
+                    loadDashboard();
+                });
+            });
+        }
+                
+        // Load dashboard
+        function loadDashboard() {
+            const user = auth.currentUser;
+            if (user) {
+                document.getElementById('auth').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('user-email').textContent = user.email;
+
+                // Load user credit from Firestore
+                db.collection("users").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        document.getElementById('purchased-credit').value = doc.data().credit;
+                    }
+                });
+
+                // Load user bets from Firestore
+                db.collection("bets").where("userId", "==", user.uid)
+                    .get()
+                    .then(querySnapshot => {
+                        const betList = document.getElementById('bet-slip-body');
+                        betList.innerHTML = '';
+                        querySnapshot.forEach(doc => {
+                            const betData = doc.data();
+                            const newRow = betList.insertRow();
+                            
+                            // Event column
+                            const eventCell = newRow.insertCell(0);
+                            eventCell.textContent = 'Event: Riders FC vs Golden Star'; // Example event name
+
+                            // Option Selected column
+                            const optionCell = newRow.insertCell(1);
+                            optionCell.textContent = betData.bet;
+
+                            // Odds column
+                            const oddsCell = newRow.insertCell(2);
+                            oddsCell.textContent = betData.odds;
+
+                            // Stake column
+                            const stakeCell = newRow.insertCell(3);
+                            stakeCell.textContent = betData.stake;
+
+                            // Winning column
+                            const winningCell = newRow.insertCell(4);
+                            winningCell.textContent = (betData.stake * betData.odds).toFixed(2);
+
+                            // Status column
+                            const statusCell = newRow.insertCell(5);
+                            statusCell.textContent = betData.status.charAt(0).toUpperCase() + betData.status.slice(1);
+                            statusCell.className = `status-${betData.status}`; // Apply the status color
+                        });
+                    });
+            }
+        }
+
+        // Request credit update
+        function requestCreditUpdate(action) {
+            const phoneNumber = "+2348102341648";
+            window.open(`https://wa.me/${phoneNumber}?text=I%20would%20like%20to%20${action}%20credit.`, '_blank');
+        }
+
+        // Auth state change
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                loadDashboard();
+            }
+        });
+    </script>
+
+</body>
+</html>
