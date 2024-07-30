@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Score - Riders FC vs Golden Star FC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .logos {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 5px solid #007BFF;
+        }
+        h1 {
+            font-size: 24px;
+            color: #007BFF;
+            margin: 20px 0;
+        }
+        .details, .stats {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .stats {
+            text-align: left;
+            margin: 20px 0;
+        }
+        .stats table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .stats th, .stats td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .stats th {
+            background-color: #f4f4f4;
+        }
+        .update-time {
+            font-size: 14px;
+            color: #888;
+        }
+        .navbar {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <!-- Firebase Configuration for Older SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="view-score.html">View Score</a>
+    </div>
+
+    <div class="container">
+        <!-- Logos -->
+        <div class="logos">
+            <img src="riders.png" alt="Riders FC Logo" class="logo">
+            <img src="g.png" alt="Golden Star FC Logo" class="logo">
+        </div>
+
+        <!-- Match Info -->
+        <h1 id="match-title">Riders FC 0 : 0 Golden Star FC</h1>
+
+        <!-- Match Details -->
+        <div class="details">
+            <p id="match-details">Match ongoing...</p>
+            <p class="update-time" id="update-time">Last updated: Not yet updated</p>
+            <p class="update-time" id="match-time">4:00 PM, August 4, 2024</p>
+        </div>
+
+        <!-- Match Stats -->
+        <div class="stats">
+            <table>
+                <tr>
+                    <th>Stat</th>
+                    <th>Riders FC</th>
+                    <th>Golden Star FC</th>
+                </tr>
+                <tr>
+                    <td>Ball Possession (%)</td>
+                    <td id="possession-ridersFC">0%</td>
+                    <td id="possession-goldenStarFC">0%</td>
+                </tr>
+                <tr>
+                    <td>Corners</td>
+                    <td id="corners-ridersFC">0</td>
+                    <td id="corners-goldenStarFC">0</td>
+                </tr>
+                <tr>
+                    <td>Yellow Cards</td>
+                    <td id="yellow-cards-ridersFC">0</td>
+                    <td id="yellow-cards-goldenStarFC">0</td>
+                </tr>
+                <tr>
+                    <td>Red Cards</td>
+                    <td id="red-cards-ridersFC">0</td>
+                    <td id="red-cards-goldenStarFC">0</td>
+                </tr>
+            </table>
+            <div><strong>Match Status:</strong> <span id="match-status">Match ongoing...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration object
+        const firebaseConfig = {
+            apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+            authDomain: "scores-b25a7.firebaseapp.com",
+            projectId: "scores-b25a7",
+            storageBucket: "scores-b25a7.appspot.com",
+            messagingSenderId: "1001957936318",
+            appId: "1:1001957936318:web:43934942ee87654fd8e2ef",
+            measurementId: "G-3QES2VR31T"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Reference to the scores node
+        const scoreRef = database.ref('liveScore');
+
+        function updateUI(data) {
+            console.log('Received data:', data); // Debugging statement
+
+            document.getElementById('match-title').innerText = `Riders FC ${data.ridersFC} : ${data.goldenStarFC} Golden Star FC`;
+            document.getElementById('match-details').innerText = `Details: ${data.matchStatus}`;
+            document.getElementById('update-time').innerText = `Last updated: ${data.lastUpdated}`;
+            document.getElementById('match-time').innerText = `4:00 PM, August 4, 2024`;
+
+            // Update stats
+            document.getElementById('possession-ridersFC').innerText = `${data.ballPossession.ridersFC}%`;
+            document.getElementById('possession-goldenStarFC').innerText = `${data.ballPossession.goldenStarFC}%`;
+            document.getElementById('corners-ridersFC').innerText = data.corners.ridersFC;
+            document.getElementById('corners-goldenStarFC').innerText = data.corners.goldenStarFC;
+            document.getElementById('yellow-cards-ridersFC').innerText = data.yellowCards.ridersFC;
+            document.getElementById('yellow-cards-goldenStarFC').innerText = data.yellowCards.goldenStarFC;
+            document.getElementById('red-cards-ridersFC').innerText = data.redCards.ridersFC;
+            document.getElementById('red-cards-goldenStarFC').innerText = data.redCards.goldenStarFC;
+            document.getElementById('match-status').innerText = data.matchStatus;
+        }
+
+        // Listen for changes in the liveScore node
+        scoreRef.on('value', snapshot => {
+            const data = snapshot.val();
+            if (data) {
+                updateUI(data);
+            } else {
+                console.log('No data available');
+            }
+        }, (error) => {
+            console.error('Error fetching data:', error);
+        });
+    </script>
+</body>
+</html>

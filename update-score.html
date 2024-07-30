@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Score - Riders FC vs Golden Star FC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 24px;
+            color: #007BFF;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        form {
+            margin: 20px 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .navbar {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <!-- Firebase Configuration for Older SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+    </div>
+
+    <div class="container">
+        <h1>Update Match Stats</h1>
+
+        <!-- Update Form -->
+        <form id="update-form">
+            <div class="form-group">
+                <label for="score-ridersFC">Riders FC Score:</label>
+                <input type="number" id="score-ridersFC" name="score-ridersFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="score-goldenStarFC">Golden Star FC Score:</label>
+                <input type="number" id="score-goldenStarFC" name="score-goldenStarFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="possession-ridersFC">Ball Possession - Riders FC (%):</label>
+                <input type="number" id="possession-ridersFC" name="possession-ridersFC" min="0" max="100">
+            </div>
+            <div class="form-group">
+                <label for="possession-goldenStarFC">Ball Possession - Golden Star FC (%):</label>
+                <input type="number" id="possession-goldenStarFC" name="possession-goldenStarFC" min="0" max="100">
+            </div>
+            <div class="form-group">
+                <label for="corners-ridersFC">Corners - Riders FC:</label>
+                <input type="number" id="corners-ridersFC" name="corners-ridersFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="corners-goldenStarFC">Corners - Golden Star FC:</label>
+                <input type="number" id="corners-goldenStarFC" name="corners-goldenStarFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="yellow-cards-ridersFC">Yellow Cards - Riders FC:</label>
+                <input type="number" id="yellow-cards-ridersFC" name="yellow-cards-ridersFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="yellow-cards-goldenStarFC">Yellow Cards - Golden Star FC:</label>
+                <input type="number" id="yellow-cards-goldenStarFC" name="yellow-cards-goldenStarFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="red-cards-ridersFC">Red Cards - Riders FC:</label>
+                <input type="number" id="red-cards-ridersFC" name="red-cards-ridersFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="red-cards-goldenStarFC">Red Cards - Golden Star FC:</label>
+                <input type="number" id="red-cards-goldenStarFC" name="red-cards-goldenStarFC" min="0">
+            </div>
+            <div class="form-group">
+                <label for="match-status">Match Status:</label>
+                <input type="text" id="match-status" name="match-status">
+            </div>
+            <button type="submit">Update Stats</button>
+        </form>
+    </div>
+
+    <!-- Link to external JavaScript file -->
+    <script src="update.js"></script>
+</body>
+</html>
