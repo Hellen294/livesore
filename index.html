@@ -362,17 +362,22 @@
             });
         }
 
-        // Request credit update
-        function requestCreditUpdate(action) {
-            const creditAmount = document.getElementById('credit-amount').value;
-            if (!creditAmount) {
-                alert('Please enter a valid credit amount.');
-                return;
-            }
-            const message = action === 'buy' ? `Contact us on WhatsApp to buy credit of amount $${creditAmount}` : `Contact us on WhatsApp to withdraw credit of amount $${creditAmount}`;
-            alert(message);
-            window.open(`https://wa.me/2348102341648?text=${encodeURIComponent(message)}`, '_blank');
-        }
+// Request credit update
+function requestCreditUpdate(action) {
+    const creditAmount = document.getElementById('credit-amount').value;
+    if (!creditAmount) {
+        alert('Please enter a valid credit amount.');
+        return;
+    }
+
+    const userEmail = auth.currentUser.email; // Get the current user's email
+    const actionMessage = action === 'buy'
+        ? `Contact us on WhatsApp to buy credit of amount $${creditAmount}. Email: ${userEmail}`
+        : `Contact us on WhatsApp to withdraw credit of amount $${creditAmount}. Email: ${userEmail}`;
+
+    alert(actionMessage);
+    window.open(`https://wa.me/2348102341648?text=${encodeURIComponent(actionMessage)}`, '_blank');
+}
 
         // Load and display user credit
         function loadUserCredit() {
