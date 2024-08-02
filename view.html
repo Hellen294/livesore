@@ -56,113 +56,128 @@
             );
         }
 
-function displayMedia() {
-    const mediaContainer = document.getElementById('media-container');
-    const mediaRef = dbRef(database, 'media');
+        function displayMedia() {
+            const mediaContainer = document.getElementById('media-container');
+            const mediaRef = dbRef(database, 'media');
 
-    onValue(mediaRef, (snapshot) => {
-        mediaContainer.innerHTML = '';
-        const mediaArray = [];
+            onValue(mediaRef, (snapshot) => {
+                mediaContainer.innerHTML = '';
+                const mediaArray = [];
 
-        snapshot.forEach((childSnapshot) => {
-            const mediaData = childSnapshot.val();
-            const mediaKey = childSnapshot.key;
-            const mediaType = mediaData.type;
-            const mediaUrl = mediaData.url;
-            const mediaName = mediaData.name;
-            const mediaTimestamp = mediaData.timestamp; // Get timestamp
+                snapshot.forEach((childSnapshot) => {
+                    const mediaData = childSnapshot.val();
+                    const mediaKey = childSnapshot.key;
+                    const mediaType = mediaData.type;
+                    const mediaUrl = mediaData.url;
+                    const mediaName = mediaData.name;
+                    const mediaTimestamp = mediaData.timestamp; // Get timestamp
 
-            mediaArray.push({
-                key: mediaKey,
-                type: mediaType,
-                url: mediaUrl,
-                name: mediaName,
-                timestamp: mediaTimestamp
+                    mediaArray.push({
+                        key: mediaKey,
+                        type: mediaType,
+                        url: mediaUrl,
+                        name: mediaName,
+                        timestamp: mediaTimestamp
+                    });
+                });
+
+                // Sort media items by timestamp in descending order
+                mediaArray.sort((a, b) => b.timestamp - a.timestamp);
+
+                mediaArray.forEach(mediaData => {
+                    const mediaKey = mediaData.key;
+                    const mediaType = mediaData.type;
+                    const mediaUrl = mediaData.url;
+                    const mediaTimestamp = mediaData.timestamp;
+
+                    const mediaFrame = document.createElement('div');
+                    mediaFrame.classList.add('media-frame');
+
+                    let mediaElement;
+                    if (mediaType.startsWith('image/')) {
+                        mediaElement = document.createElement('img');
+                    } else if (mediaType.startsWith('video/')) {
+                        mediaElement = document.createElement('video');
+                        mediaElement.controls = true;
+                    }
+                    mediaElement.src = mediaUrl;
+                    mediaElement.classList.add('media-item');
+
+                    // Format the timestamp
+                    const date = new Date(mediaTimestamp);
+                    const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+
+                    const timestampElement = document.createElement('div');
+                    timestampElement.textContent = `Uploaded on: ${formattedDate}`;
+                    timestampElement.classList.add('timestamp');
+
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.classList.add('button-container');
+
+                    const likeButton = document.createElement('button');
+                    likeButton.textContent = `Like (${mediaData.likes || 0})`;
+                    likeButton.classList.add('like-button');
+                    likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes'));
+
+                    const shareButton = document.createElement('button');
+                    shareButton.textContent = 'Share';
+                    shareButton.classList.add('share-button');
+                    shareButton.addEventListener('click', () => toggleSharePopup(mediaFrame.id));
+
+                    const commentForm = document.createElement('form');
+                    commentForm.classList.add('comment-form');
+                    const commentInput = document.createElement('input');
+                    commentInput.type = 'text';
+                    commentInput.placeholder = 'Add a comment...';
+                    commentInput.classList.add('comment-input');
+                    const submitCommentButton = document.createElement('button');
+                    submitCommentButton.type = 'submit';
+                    submitCommentButton.textContent = 'Post';
+                    submitCommentButton.classList.add('submit-comment-button');
+
+                    commentForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        postComment(mediaKey, commentInput.value);
+                        commentInput.value = '';
+                    });
+
+                    const commentList = document.createElement('div');
+                    commentList.classList.add('comment-list');
+
+                    fetchComments(mediaKey, commentList);
+
+                    commentForm.appendChild(commentInput);
+                    commentForm.appendChild(submitCommentButton);
+
+                    buttonContainer.appendChild(likeButton);
+                    buttonContainer.appendChild(shareButton);
+
+                    mediaFrame.appendChild(mediaElement);
+                    mediaFrame.appendChild(timestampElement); // Add timestamp to media frame
+                    mediaFrame.appendChild(buttonContainer);
+                    mediaFrame.appendChild(commentForm);
+                    mediaFrame.appendChild(commentList);
+
+                    mediaContainer.appendChild(mediaFrame);
+                });
             });
-        });
+        }
 
-        // Sort media items by timestamp in descending order
-        mediaArray.sort((a, b) => b.timestamp - a.timestamp);
+        function updateActivityCount(mediaKey, activityType) {
+            const activityRef = dbRef(database, `media/${mediaKey}/${activityType}`);
+            set(activityRef, increment(1));
+        }
 
-        mediaArray.forEach(mediaData => {
-            const mediaKey = mediaData.key;
-            const mediaType = mediaData.type;
-            const mediaUrl = mediaData.url;
-            const mediaTimestamp = mediaData.timestamp;
-
-            const mediaFrame = document.createElement('div');
-            mediaFrame.classList.add('media-frame');
-
-            let mediaElement;
-            if (mediaType.startsWith('image/')) {
-                mediaElement = document.createElement('img');
-            } else if (mediaType.startsWith('video/')) {
-                mediaElement = document.createElement('video');
-                mediaElement.controls = true;
-            }
-            mediaElement.src = mediaUrl;
-            mediaElement.classList.add('media-item');
-
-            // Format the timestamp
-            const date = new Date(mediaTimestamp);
-            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-
-            const timestampElement = document.createElement('div');
-            timestampElement.textContent = `Uploaded on: ${formattedDate}`;
-            timestampElement.classList.add('timestamp');
-
-            const buttonContainer = document.createElement('div');
-            buttonContainer.classList.add('button-container');
-
-            const likeButton = document.createElement('button');
-            likeButton.textContent = `Like (${mediaData.likes || 0})`;
-            likeButton.classList.add('like-button');
-            likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes'));
-
-            const shareButton = document.createElement('button');
-            shareButton.textContent = 'Share';
-            shareButton.classList.add('share-button');
-            shareButton.addEventListener('click', () => toggleSharePopup(mediaFrame.id));
-
-            const commentForm = document.createElement('form');
-            commentForm.classList.add('comment-form');
-            const commentInput = document.createElement('input');
-            commentInput.type = 'text';
-            commentInput.placeholder = 'Add a comment...';
-            commentInput.classList.add('comment-input');
-            const submitCommentButton = document.createElement('button');
-            submitCommentButton.type = 'submit';
-            submitCommentButton.textContent = 'Post';
-            submitCommentButton.classList.add('submit-comment-button');
-
-            commentForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                postComment(mediaKey, commentInput.value);
-                commentInput.value = '';
+        function postComment(mediaKey, commentText) {
+            const commentsRef = dbRef(database, `media/${mediaKey}/comments`);
+            const newCommentRef = push(commentsRef);
+            set(newCommentRef, {
+                text: commentText,
+                timestamp: Date.now() // Add timestamp here
+            }).then(() => {
+                updateCommentCount(mediaKey);
             });
-
-            const commentList = document.createElement('div');
-            commentList.classList.add('comment-list');
-
-            fetchComments(mediaKey, commentList);
-
-            commentForm.appendChild(commentInput);
-            commentForm.appendChild(submitCommentButton);
-
-            buttonContainer.appendChild(likeButton);
-            buttonContainer.appendChild(shareButton);
-
-            mediaFrame.appendChild(mediaElement);
-            mediaFrame.appendChild(timestampElement); // Add timestamp to media frame
-            mediaFrame.appendChild(buttonContainer);
-            mediaFrame.appendChild(commentForm);
-            mediaFrame.appendChild(commentList);
-
-            mediaContainer.appendChild(mediaFrame);
-        });
-    });
-}
-
+        }
 
         function updateCommentCount(mediaKey) {
             const commentCountRef = dbRef(database, `media/${mediaKey}/commentCount`);
@@ -245,112 +260,102 @@ function displayMedia() {
             padding: 10px 15px;
             border: none;
             border-radius: 5px;
-            background-color: #007bff;
+            background-color: #28a745;
             color: white;
             cursor: pointer;
             flex: 1;
             margin: 0 5px;
         }
         .share-button:hover {
-            background-color: #0056b3;
+            background-color: #218838;
         }
         .comment-form {
-            display: flex;
             width: 100%;
+            display: flex;
+            flex-direction: column;
             margin-top: 10px;
         }
         .comment-input {
-            flex: 1;
+            width: calc(100% - 80px);
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            margin-bottom: 5px;
         }
         .submit-comment-button {
-            padding: 10px 15px;
+            width: 75px;
+            padding: 10px;
             border: none;
             border-radius: 5px;
-            background-color: #28a745;
+            background-color: #007bff;
             color: white;
             cursor: pointer;
-            margin-left: 10px;
         }
         .submit-comment-button:hover {
-            background-color: #218838;
+            background-color: #0056b3;
         }
         .comment-list {
             width: 100%;
             margin-top: 10px;
         }
         .comment-item {
-            padding: 10px;
+            padding: 5px;
             border-bottom: 1px solid #ccc;
         }
         #share-popup {
             display: none;
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
             padding: 20px;
-            background: #fff;
             border: 1px solid #ccc;
             border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
         #share-popup.show {
             display: block;
         }
-        .share-popup-button {
-            display: block;
-            padding: 10px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            text-align: center;
+        #share-popup button {
+            margin: 5px;
         }
-        .share-popup-button:hover {
-            background-color: #0056b3;
+        #share-popup-url {
+            width: 100%;
+            padding: 5px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>View Media</h1>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload File</button>
     <div id="media-container"></div>
 
     <div id="share-popup">
-        <input type="text" id="share-popup-url" readonly>
-        <a href="#" class="share-popup-button" id="share-facebook">Share on Facebook</a>
-        <a href="#" class="share-popup-button" id="share-twitter">Share on Twitter</a>
-        <a href="#" class="share-popup-button" id="share-whatsapp">Share on WhatsApp</a>
+        <h3>Share this media</h3>
+        <input type="text" id="share-popup-url" readonly />
+        <button onclick="shareOnFacebook()">Share on Facebook</button>
+        <button onclick="shareOnTwitter()">Share on Twitter</button>
+        <button onclick="shareOnWhatsApp()">Share on WhatsApp</button>
+        <button onclick="document.getElementById('share-popup').classList.remove('show')">Close</button>
     </div>
 
-<script>
-    document.addEventListener('click', function(event) {
-        if (event.target && event.target.id === 'share-facebook') {
+    <script>
+        function shareOnFacebook() {
             const url = document.getElementById('share-popup-url').value;
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-            hideSharePopup();
         }
-        if (event.target && event.target.id === 'share-twitter') {
+
+        function shareOnTwitter() {
             const url = document.getElementById('share-popup-url').value;
             window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`, '_blank');
-            hideSharePopup();
         }
-        if (event.target && event.target.id === 'share-whatsapp') {
+
+        function shareOnWhatsApp() {
             const url = document.getElementById('share-popup-url').value;
             window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
-            hideSharePopup();
         }
-    });
-
-    function hideSharePopup() {
-        document.getElementById('share-popup').classList.remove('show');
-    }
-</script>
-
+    </script>
 </body>
 </html>
