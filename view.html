@@ -6,8 +6,8 @@
     <title>View Media</title>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
-        import { getStorage, ref, listAll, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-storage.js';
-        import { getDatabase, ref as dbRef, onValue } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js';
+        import { getStorage } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-storage.js';
+        import { getDatabase, ref as dbRef, onValue, set, increment, push } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyB6tWe0xxeg9-A8rfv3ouRAWHkJzM1klzU",
@@ -31,8 +31,12 @@
                 mediaContainer.innerHTML = '';
                 snapshot.forEach((childSnapshot) => {
                     const mediaData = childSnapshot.val();
+                    const mediaKey = childSnapshot.key;
                     const mediaType = mediaData.type;
                     const mediaUrl = mediaData.url;
+
+                    const mediaFrame = document.createElement('div');
+                    mediaFrame.classList.add('media-frame');
 
                     let mediaElement;
                     if (mediaType.startsWith('image/')) {
@@ -43,9 +47,97 @@
                     }
                     mediaElement.src = mediaUrl;
                     mediaElement.classList.add('media-item');
-                    mediaContainer.appendChild(mediaElement);
+
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.classList.add('button-container');
+
+                    const likeButton = document.createElement('button');
+                    likeButton.textContent = `Like (${mediaData.likes || 0})`;
+                    likeButton.classList.add('like-button');
+                    likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes'));
+
+                    const shareButton = document.createElement('button');
+                    shareButton.textContent = 'Share';
+                    shareButton.classList.add('share-button');
+                    shareButton.addEventListener('click', () => toggleSharePopup(mediaFrame.id));
+
+                    const commentForm = document.createElement('form');
+                    commentForm.classList.add('comment-form');
+                    const commentInput = document.createElement('input');
+                    commentInput.type = 'text';
+                    commentInput.placeholder = 'Add a comment...';
+                    commentInput.classList.add('comment-input');
+                    const submitCommentButton = document.createElement('button');
+                    submitCommentButton.type = 'submit';
+                    submitCommentButton.textContent = 'Post';
+                    submitCommentButton.classList.add('submit-comment-button');
+
+                    commentForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        postComment(mediaKey, commentInput.value);
+                        commentInput.value = '';
+                    });
+
+                    const commentList = document.createElement('div');
+                    commentList.classList.add('comment-list');
+
+                    fetchComments(mediaKey, commentList);
+
+                    commentForm.appendChild(commentInput);
+                    commentForm.appendChild(submitCommentButton);
+
+                    buttonContainer.appendChild(likeButton);
+                    buttonContainer.appendChild(shareButton);
+
+                    mediaFrame.appendChild(mediaElement);
+                    mediaFrame.appendChild(buttonContainer);
+                    mediaFrame.appendChild(commentForm);
+                    mediaFrame.appendChild(commentList);
+
+                    mediaContainer.appendChild(mediaFrame);
                 });
             });
+        }
+
+        function updateActivityCount(mediaKey, activityType) {
+            const activityRef = dbRef(database, `media/${mediaKey}/${activityType}`);
+            set(activityRef, increment(1));
+        }
+
+        function postComment(mediaKey, commentText) {
+            const commentsRef = dbRef(database, `media/${mediaKey}/comments`);
+            const newCommentRef = push(commentsRef);
+            set(newCommentRef, {
+                text: commentText,
+                timestamp: Date.now()
+            }).then(() => {
+                updateCommentCount(mediaKey);
+            });
+        }
+
+        function updateCommentCount(mediaKey) {
+            const commentCountRef = dbRef(database, `media/${mediaKey}/commentCount`);
+            set(commentCountRef, increment(1));
+        }
+
+        function fetchComments(mediaKey, commentList) {
+            const commentsRef = dbRef(database, `media/${mediaKey}/comments`);
+            onValue(commentsRef, (snapshot) => {
+                commentList.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const commentData = childSnapshot.val();
+                    const commentItem = document.createElement('div');
+                    commentItem.classList.add('comment-item');
+                    commentItem.textContent = commentData.text;
+                    commentList.appendChild(commentItem);
+                });
+            });
+        }
+
+        function toggleSharePopup(mediaFrameId) {
+            const popup = document.getElementById('share-popup');
+            popup.classList.toggle('show');
+            document.getElementById('share-popup-url').value = document.querySelector(`#${mediaFrameId} .media-item`).src;
         }
 
         document.addEventListener('DOMContentLoaded', displayMedia);
@@ -57,17 +149,146 @@
         #media-container {
             display: flex;
             flex-wrap: wrap;
+            justify-content: center;
+        }
+        .media-frame {
+            width: 100%;
+            max-width: 600px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
         }
         .media-item {
-            width: 400px;
-            height: 300ox;
+            width: 100%;
+            max-height: 500px;
             object-fit: cover;
-            margin: 10px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .like-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            flex: 1;
+            margin: 0 5px;
+        }
+        .like-button:hover {
+            background-color: #0056b3;
+        }
+        .share-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            flex: 1;
+            margin: 0 5px;
+        }
+        .share-button:hover {
+            background-color: #0056b3;
+        }
+        .comment-form {
+            display: flex;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .comment-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .submit-comment-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .submit-comment-button:hover {
+            background-color: #218838;
+        }
+        .comment-list {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .comment-item {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        #share-popup {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        #share-popup.show {
+            display: block;
+        }
+        .share-popup-button {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+        }
+        .share-popup-button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
     <h1>View Media</h1>
     <div id="media-container"></div>
+
+    <div id="share-popup">
+        <input type="text" id="share-popup-url" readonly>
+        <a href="#" class="share-popup-button" id="share-facebook">Share on Facebook</a>
+        <a href="#" class="share-popup-button" id="share-twitter">Share on Twitter</a>
+        <a href="#" class="share-popup-button" id="share-whatsapp">Share on WhatsApp</a>
+    </div>
+
+    <script>
+        document.addEventListener('click', function(event) {
+            if (event.target && event.target.id === 'share-facebook') {
+                const url = document.getElementById('share-popup-url').value;
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+            }
+            if (event.target && event.target.id === 'share-twitter') {
+                const url = document.getElementById('share-popup-url').value;
+                window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`, '_blank');
+            }
+            if (event.target && event.target.id === 'share-whatsapp') {
+                const url = document.getElementById('share-popup-url').value;
+                window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
+            }
+        });
+    </script>
 </body>
 </html>
