@@ -117,20 +117,26 @@
 
         document.addEventListener('DOMContentLoaded', displayMedia);
     </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        #media-container img, #media-container video {
-            max-width: 100%;
-            height: auto;
-            margin: 10px;
-        }
-        #media-container button {
-            display: block;
-            margin: 10px 0;
-        }
-    </style>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    #media-container {
+        text-align: center; /* Center align the contents */
+    }
+    #media-container img, #media-container video {
+        max-width: 100%;
+        height: auto;
+        margin: 10px;
+    }
+    #media-container button {
+        display: inline-block; /* Make button an inline-block element */
+        margin: 10px 0;
+        padding: 15px 30px; /* Increase padding to enlarge button */
+        font-size: 18px; /* Increase font size */
+    }
+</style>
+
 </head>
 <body>
     <h1>Upload and Manage Media</h1>
