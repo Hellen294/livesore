@@ -81,6 +81,16 @@
             margin-top: 20px;
             font-size: 16px;
         }
+                .thumbnail {
+            width: 200px; /* Adjust size as needed */
+            cursor: pointer;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            transition: transform 0.3s ease;
+        }
+        .thumbnail:hover {
+            transform: scale(1.05);
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -173,9 +183,9 @@
                 </table>
             </div>
         </div>
-        <div class="container">
-            <a href="view.html">Check Highlights here</a>
-        </div>
+    <a href="view.html">
+        <img src="thumbnail.jpg" alt="Thumbnail Image" class="thumbnail">
+    </a>
     </div>
     <!-- Firebase setup -->
     <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
