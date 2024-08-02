@@ -47,7 +47,8 @@
                         push(mediaRef, {
                             url: downloadURL,
                             type: file.type,
-                            name: file.name
+                            name: file.name,
+                            timestamp: Date.now() // Add timestamp here
                         });
                         alert("Upload successful!");
                     });
@@ -67,11 +68,17 @@
                     const mediaUrl = mediaData.url;
                     const mediaName = mediaData.name;
                     const mediaKey = childSnapshot.key;
+                    const timestamp = mediaData.timestamp;
+
+                    const uploadDate = new Date(Number(timestamp)).toLocaleString(); // Convert timestamp
 
                     if (!mediaName || !mediaKey) {
                         console.error("Missing media data", mediaData);
                         return;
                     }
+
+                    const mediaFrame = document.createElement('div');
+                    mediaFrame.classList.add('media-frame');
 
                     let mediaElement;
                     if (mediaType.startsWith('image/')) {
@@ -87,9 +94,17 @@
                     deleteButton.textContent = 'Delete';
                     deleteButton.onclick = () => deleteMedia(mediaKey, mediaName);
 
+                    // Create timestamp element
+                    const timestampElement = document.createElement('div');
+                    timestampElement.classList.add('timestamp');
+                    timestampElement.textContent = `Uploaded on: ${uploadDate}`;
+
                     // Append elements
-                    mediaContainer.appendChild(mediaElement);
-                    mediaContainer.appendChild(deleteButton);
+                    mediaFrame.appendChild(mediaElement);
+                    mediaFrame.appendChild(timestampElement);
+                    mediaFrame.appendChild(deleteButton);
+
+                    mediaContainer.appendChild(mediaFrame);
                 });
             });
         }
@@ -135,8 +150,12 @@
         padding: 15px 30px; /* Increase padding to enlarge button */
         font-size: 18px; /* Increase font size */
     }
+    .timestamp {
+        font-size: 14px;
+        color: #666;
+        margin-top: 10px;
+    }
 </style>
-
 </head>
 <body>
     <h1>Upload and Manage Media</h1>
