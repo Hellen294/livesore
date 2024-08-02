@@ -56,108 +56,113 @@
             );
         }
 
-        function displayMedia() {
-            const mediaContainer = document.getElementById('media-container');
-            const mediaRef = dbRef(database, 'media');
+function displayMedia() {
+    const mediaContainer = document.getElementById('media-container');
+    const mediaRef = dbRef(database, 'media');
 
-            onValue(mediaRef, (snapshot) => {
-                mediaContainer.innerHTML = '';
-                snapshot.forEach((childSnapshot) => {
-                    const mediaData = childSnapshot.val();
-                    const mediaKey = childSnapshot.key;
-                    const mediaType = mediaData.type;
-                    const mediaUrl = mediaData.url;
-                    const mediaName = mediaData.name;
-                    const mediaTimestamp = mediaData.timestamp; // Get timestamp
+    onValue(mediaRef, (snapshot) => {
+        mediaContainer.innerHTML = '';
+        const mediaArray = [];
 
-                    const mediaFrame = document.createElement('div');
-                    mediaFrame.classList.add('media-frame');
+        snapshot.forEach((childSnapshot) => {
+            const mediaData = childSnapshot.val();
+            const mediaKey = childSnapshot.key;
+            const mediaType = mediaData.type;
+            const mediaUrl = mediaData.url;
+            const mediaName = mediaData.name;
+            const mediaTimestamp = mediaData.timestamp; // Get timestamp
 
-                    let mediaElement;
-                    if (mediaType.startsWith('image/')) {
-                        mediaElement = document.createElement('img');
-                    } else if (mediaType.startsWith('video/')) {
-                        mediaElement = document.createElement('video');
-                        mediaElement.controls = true;
-                    }
-                    mediaElement.src = mediaUrl;
-                    mediaElement.classList.add('media-item');
-
-                    // Format the timestamp
-                    const date = new Date(mediaTimestamp);
-                    const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-
-                    const timestampElement = document.createElement('div');
-                    timestampElement.textContent = `Uploaded on: ${formattedDate}`;
-                    timestampElement.classList.add('timestamp');
-
-                    const buttonContainer = document.createElement('div');
-                    buttonContainer.classList.add('button-container');
-
-                    const likeButton = document.createElement('button');
-                    likeButton.textContent = `Like (${mediaData.likes || 0})`;
-                    likeButton.classList.add('like-button');
-                    likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes'));
-
-                    const shareButton = document.createElement('button');
-                    shareButton.textContent = 'Share';
-                    shareButton.classList.add('share-button');
-                    shareButton.addEventListener('click', () => toggleSharePopup(mediaFrame.id));
-
-                    const commentForm = document.createElement('form');
-                    commentForm.classList.add('comment-form');
-                    const commentInput = document.createElement('input');
-                    commentInput.type = 'text';
-                    commentInput.placeholder = 'Add a comment...';
-                    commentInput.classList.add('comment-input');
-                    const submitCommentButton = document.createElement('button');
-                    submitCommentButton.type = 'submit';
-                    submitCommentButton.textContent = 'Post';
-                    submitCommentButton.classList.add('submit-comment-button');
-
-                    commentForm.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        postComment(mediaKey, commentInput.value);
-                        commentInput.value = '';
-                    });
-
-                    const commentList = document.createElement('div');
-                    commentList.classList.add('comment-list');
-
-                    fetchComments(mediaKey, commentList);
-
-                    commentForm.appendChild(commentInput);
-                    commentForm.appendChild(submitCommentButton);
-
-                    buttonContainer.appendChild(likeButton);
-                    buttonContainer.appendChild(shareButton);
-
-                    mediaFrame.appendChild(mediaElement);
-                    mediaFrame.appendChild(timestampElement); // Add timestamp to media frame
-                    mediaFrame.appendChild(buttonContainer);
-                    mediaFrame.appendChild(commentForm);
-                    mediaFrame.appendChild(commentList);
-
-                    mediaContainer.appendChild(mediaFrame);
-                });
+            mediaArray.push({
+                key: mediaKey,
+                type: mediaType,
+                url: mediaUrl,
+                name: mediaName,
+                timestamp: mediaTimestamp
             });
-        }
+        });
 
-        function updateActivityCount(mediaKey, activityType) {
-            const activityRef = dbRef(database, `media/${mediaKey}/${activityType}`);
-            set(activityRef, increment(1));
-        }
+        // Sort media items by timestamp in descending order
+        mediaArray.sort((a, b) => b.timestamp - a.timestamp);
 
-        function postComment(mediaKey, commentText) {
-            const commentsRef = dbRef(database, `media/${mediaKey}/comments`);
-            const newCommentRef = push(commentsRef);
-            set(newCommentRef, {
-                text: commentText,
-                timestamp: Date.now()
-            }).then(() => {
-                updateCommentCount(mediaKey);
+        mediaArray.forEach(mediaData => {
+            const mediaKey = mediaData.key;
+            const mediaType = mediaData.type;
+            const mediaUrl = mediaData.url;
+            const mediaTimestamp = mediaData.timestamp;
+
+            const mediaFrame = document.createElement('div');
+            mediaFrame.classList.add('media-frame');
+
+            let mediaElement;
+            if (mediaType.startsWith('image/')) {
+                mediaElement = document.createElement('img');
+            } else if (mediaType.startsWith('video/')) {
+                mediaElement = document.createElement('video');
+                mediaElement.controls = true;
+            }
+            mediaElement.src = mediaUrl;
+            mediaElement.classList.add('media-item');
+
+            // Format the timestamp
+            const date = new Date(mediaTimestamp);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+
+            const timestampElement = document.createElement('div');
+            timestampElement.textContent = `Uploaded on: ${formattedDate}`;
+            timestampElement.classList.add('timestamp');
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('button-container');
+
+            const likeButton = document.createElement('button');
+            likeButton.textContent = `Like (${mediaData.likes || 0})`;
+            likeButton.classList.add('like-button');
+            likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes'));
+
+            const shareButton = document.createElement('button');
+            shareButton.textContent = 'Share';
+            shareButton.classList.add('share-button');
+            shareButton.addEventListener('click', () => toggleSharePopup(mediaFrame.id));
+
+            const commentForm = document.createElement('form');
+            commentForm.classList.add('comment-form');
+            const commentInput = document.createElement('input');
+            commentInput.type = 'text';
+            commentInput.placeholder = 'Add a comment...';
+            commentInput.classList.add('comment-input');
+            const submitCommentButton = document.createElement('button');
+            submitCommentButton.type = 'submit';
+            submitCommentButton.textContent = 'Post';
+            submitCommentButton.classList.add('submit-comment-button');
+
+            commentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                postComment(mediaKey, commentInput.value);
+                commentInput.value = '';
             });
-        }
+
+            const commentList = document.createElement('div');
+            commentList.classList.add('comment-list');
+
+            fetchComments(mediaKey, commentList);
+
+            commentForm.appendChild(commentInput);
+            commentForm.appendChild(submitCommentButton);
+
+            buttonContainer.appendChild(likeButton);
+            buttonContainer.appendChild(shareButton);
+
+            mediaFrame.appendChild(mediaElement);
+            mediaFrame.appendChild(timestampElement); // Add timestamp to media frame
+            mediaFrame.appendChild(buttonContainer);
+            mediaFrame.appendChild(commentForm);
+            mediaFrame.appendChild(commentList);
+
+            mediaContainer.appendChild(mediaFrame);
+        });
+    });
+}
+
 
         function updateCommentCount(mediaKey) {
             const commentCountRef = dbRef(database, `media/${mediaKey}/commentCount`);
