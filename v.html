@@ -23,40 +23,6 @@
         const storage = getStorage(app);
         const database = getDatabase(app);
 
-        window.uploadFile = () => {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) {
-                alert("Please select a file.");
-                return;
-            }
-
-            const fileRef = storageRef(storage, 'media/' + file.name);
-            const uploadTask = uploadBytesResumable(fileRef, file);
-
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    // Observe state change, progress, etc.
-                }, 
-                (error) => {
-                    console.error("Upload failed:", error);
-                }, 
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        const mediaRef = dbRef(database, 'media');
-                        push(mediaRef, {
-                            url: downloadURL,
-                            type: file.type,
-                            name: file.name,
-                            timestamp: Date.now(), // Add timestamp here
-                            likes: 0 // Initialize likes
-                        });
-                        alert("Upload successful!");
-                    });
-                }
-            );
-        }
-
         function displayMedia() {
             const mediaContainer = document.getElementById('media-container');
             const mediaRef = dbRef(database, 'media');
