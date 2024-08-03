@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
         import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-storage.js';
-        import { getDatabase, ref as dbRef, push, onValue, set, increment } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js';
+        import { getDatabase, ref as dbRef, push, onValue, set, increment, runTransaction } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyB6tWe0xxeg9-A8rfv3ouRAWHkJzM1klzU",
@@ -48,7 +48,8 @@
                             url: downloadURL,
                             type: file.type,
                             name: file.name,
-                            timestamp: Date.now() // Add timestamp here
+                            timestamp: Date.now(), // Add timestamp here
+                            likes: 0 // Initialize likes
                         });
                         alert("Upload successful!");
                     });
@@ -77,7 +78,8 @@
                         type: mediaType,
                         url: mediaUrl,
                         name: mediaName,
-                        timestamp: mediaTimestamp
+                        timestamp: mediaTimestamp,
+                        likes: mediaData.likes || 0 // Ensure likes is initialized
                     });
                 });
 
@@ -89,6 +91,7 @@
                     const mediaType = mediaData.type;
                     const mediaUrl = mediaData.url;
                     const mediaTimestamp = mediaData.timestamp;
+                    const mediaLikes = mediaData.likes;
 
                     const mediaFrame = document.createElement('div');
                     mediaFrame.classList.add('media-frame');
@@ -115,9 +118,9 @@
                     buttonContainer.classList.add('button-container');
 
                     const likeButton = document.createElement('button');
-                    likeButton.textContent = `Like (${mediaData.likes || 0})`;
+                    likeButton.textContent = `Like (${mediaLikes})`;
                     likeButton.classList.add('like-button');
-                    likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes'));
+                    likeButton.addEventListener('click', () => updateActivityCount(mediaKey, 'likes', likeButton));
 
                     const shareButton = document.createElement('button');
                     shareButton.textContent = 'Share';
@@ -163,9 +166,20 @@
             });
         }
 
-        function updateActivityCount(mediaKey, activityType) {
-            const activityRef = dbRef(database, `media/${mediaKey}/${activityType}`);
-            set(activityRef, increment(1));
+        function updateActivityCount(mediaKey, activityType, likeButton) {
+            const activityRef = dbRef(database, `media/${mediaKey}`);
+            runTransaction(activityRef, (media) => {
+                if (media) {
+                    if (!media.likes) media.likes = 0;
+                    media.likes += 1;
+                }
+                return media;
+            }).then(() => {
+                // Refresh media items after successful like update
+                displayMedia();
+            }).catch((error) => {
+                console.error("Transaction failed:", error);
+            });
         }
 
         function postComment(mediaKey, commentText) {
@@ -337,6 +351,11 @@
         <button onclick="shareOnWhatsApp()">Share on WhatsApp</button>
         <button onclick="document.getElementById('share-popup').classList.remove('show')">Close</button>
     </div>
+
+    <div id="media-container"></div>
+
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload File</button>
 
     <script>
         function shareOnFacebook() {
