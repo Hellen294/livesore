@@ -192,6 +192,32 @@
             font-family: Arial, sans-serif;
             background-color: #FFE4E1;
         }
+            .header {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .welcome-message {
+            margin-top: 80px; /* Adjust this if the header height changes */
+            text-align: center;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 28px;
+            color: #555;
+        }
         #media-container {
             display: flex;
             flex-wrap: wrap;
@@ -310,10 +336,12 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>Highlights Page</h1>
-        <h2>View our latest upload at the top. You can like, share, and comment. Please comment responsibly and avoid inciting conflict.</h2>
-    </header>
+    <div class="header">
+        <h1 class="header-title">Media Page</h1>
+    </div>
+
+    <div class="welcome-message">
+        <p>View our latest upload at the top. You can like, share, and comment. Please comment responsibly and avoid inciting conflict.</p>
 
     <div id="share-popup">
         <h3>Share this media</h3>
