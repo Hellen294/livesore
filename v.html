@@ -37,7 +37,7 @@
                     const mediaType = mediaData.type;
                     const mediaUrl = mediaData.url;
                     const mediaName = mediaData.name;
-                    const mediaTimestamp = mediaData.timestamp; // Get timestamp
+                    const mediaTimestamp = mediaData.timestamp;
 
                     mediaArray.push({
                         key: mediaKey,
@@ -45,11 +45,10 @@
                         url: mediaUrl,
                         name: mediaName,
                         timestamp: mediaTimestamp,
-                        likes: mediaData.likes || 0 // Ensure likes is initialized
+                        likes: mediaData.likes || 0
                     });
                 });
 
-                // Sort media items by timestamp in descending order
                 mediaArray.sort((a, b) => b.timestamp - a.timestamp);
 
                 mediaArray.forEach(mediaData => {
@@ -72,7 +71,6 @@
                     mediaElement.src = mediaUrl;
                     mediaElement.classList.add('media-item');
 
-                    // Format the timestamp
                     const date = new Date(mediaTimestamp);
                     const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 
@@ -106,6 +104,10 @@
 
                     commentForm.addEventListener('submit', (e) => {
                         e.preventDefault();
+                        if (commentInput.value.trim() === '') {
+                            alert("Please add a comment before posting.");
+                            return;
+                        }
                         postComment(mediaKey, commentInput.value);
                         commentInput.value = '';
                     });
@@ -122,7 +124,7 @@
                     buttonContainer.appendChild(shareButton);
 
                     mediaFrame.appendChild(mediaElement);
-                    mediaFrame.appendChild(timestampElement); // Add timestamp to media frame
+                    mediaFrame.appendChild(timestampElement);
                     mediaFrame.appendChild(buttonContainer);
                     mediaFrame.appendChild(commentForm);
                     mediaFrame.appendChild(commentList);
@@ -141,7 +143,6 @@
                 }
                 return media;
             }).then(() => {
-                // Refresh media items after successful like update
                 displayMedia();
             }).catch((error) => {
                 console.error("Transaction failed:", error);
@@ -153,7 +154,7 @@
             const newCommentRef = push(commentsRef);
             set(newCommentRef, {
                 text: commentText,
-                timestamp: Date.now() // Add timestamp here
+                timestamp: Date.now()
             }).then(() => {
                 updateCommentCount(mediaKey);
             });
@@ -319,8 +320,6 @@
     </div>
 
     <div id="media-container"></div>
-
-
 
     <script>
         function shareOnFacebook() {
